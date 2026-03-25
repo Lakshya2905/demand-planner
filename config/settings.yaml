@@ -1,0 +1,61 @@
+# Demand Planning & Forecasting Configuration
+
+forecasting:
+  default_horizon_days: 30
+  models:
+    arima:
+      order: [1, 1, 1]
+      seasonal_order: [1, 1, 1, 7]  # Weekly seasonality
+      enabled: true
+    exponential_smoothing:
+      trend: "add"
+      seasonal: "add"
+      seasonal_periods: 7
+      enabled: true
+    prophet:
+      yearly_seasonality: true
+      weekly_seasonality: true
+      daily_seasonality: false
+      changepoint_prior_scale: 0.05
+      enabled: true
+  ensemble:
+    enabled: true
+    method: "weighted_average"  # Options: weighted_average, best_model, stacking
+    weights:
+      arima: 0.3
+      exponential_smoothing: 0.3
+      prophet: 0.4
+
+anomaly_detection:
+  method: "zscore"  # Options: zscore, iqr, isolation_forest
+  zscore_threshold: 3.0
+  iqr_multiplier: 1.5
+  lookback_days: 90
+  min_data_points: 30
+
+reporting:
+  output_format: "markdown"  # Options: markdown, html, pdf
+  include_charts: true
+  chart_style: "seaborn"
+  sections:
+    - summary
+    - forecast_table
+    - anomaly_alerts
+    - trend_analysis
+    - recommendations
+
+data:
+  date_column: "date"
+  demand_column: "demand"
+  sku_column: "sku_id"
+  warehouse_column: "warehouse"
+  supported_formats:
+    - csv
+    - xlsx
+    - parquet
+
+agent:
+  model: "gpt-4o"
+  temperature: 0.1
+  max_tokens: 4096
+  verbose: true
