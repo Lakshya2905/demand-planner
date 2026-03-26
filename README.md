@@ -1,132 +1,140 @@
-# Demand Planning & Forecasting System
+# Demand Planner
 
-An AI-powered supply chain demand planning and forecasting platform built with **Claude Code**, **LangChain**, and **Anthropic's Claude API**.
+AI-powered supply chain demand forecasting system with interactive dashboard and GPT-4o assistant.
+
+**[Live Dashboard](https://demand-planner-dashboard.vercel.app)** | **[API](https://demand-planner-production-b800.up.railway.app/api/skus)** | **[Documentation](./docs/)**
+
+---
+
+## Overview
+
+Full-stack demand planning system that forecasts product demand using statistical models (SARIMA, Holt-Winters, Prophet), detects anomalies, and provides natural language analytics through a GPT-4o powered assistant.
+
+Built with Python, FastAPI, React, LangChain, and OpenAI.
 
 ## Features
 
-- **Time Series Forecasting**: ARIMA, Exponential Smoothing, and Prophet-based models for inventory demand prediction
-- **Anomaly Detection**: Automated identification of unusual demand spikes, drops, and seasonal deviations
-- **Natural Language Querying**: Ask questions about your data in plain English (e.g., "What's the projected demand for SKU-1234 next month?")
-- **Automated Report Generation**: Weekly/monthly demand reports with insights, trends, and recommendations
+- **Multi-model forecasting** - SARIMA, Holt-Winters, Prophet, and weighted ensemble with configurable 7-90 day horizons
+- **Anomaly detection** - Z-score based with adjustable sensitivity and spike/drop classification
+- **Interactive dashboard** - Five analysis views: History, Forecast, Anomalies, Compare, Edit Data
+- **AI assistant** - GPT-4o chat with tool-calling, RAG knowledge base, and automated reports
+- **Data flexibility** - CSV upload, inline editing for scenario analysis, full reset capability
+- **REST API** - 15 endpoints for forecasting, anomaly detection, data management, and LLM analytics
 
 ## Architecture
 
 ```
-demand-planner/
-├── src/
-│   ├── agents/              # LangChain agents for orchestration
-│   │   ├── demand_agent.py  # Main demand planning agent
-│   │   └── report_agent.py  # Report generation agent
-│   ├── chains/              # LangChain chains
-│   │   ├── forecast_chain.py
-│   │   ├── anomaly_chain.py
-│   │   └── query_chain.py
-│   ├── tools/               # Custom LangChain tools
-│   │   ├── forecasting.py
-│   │   ├── anomaly_detector.py
-│   │   ├── data_loader.py
-│   │   └── report_generator.py
-│   ├── models/              # Forecasting models
-│   │   ├── arima_model.py
-│   │   ├── exponential_smoothing.py
-│   │   └── prophet_model.py
-│   ├── data/                # Data processing
-│   │   ├── preprocessor.py
-│   │   └── validators.py
-│   └── utils/               # Utilities
-│       ├── config.py
-│       └── logger.py
-├── config/
-│   └── settings.yaml        # Configuration file
-├── tests/                   # Unit and integration tests
-├── sample_data/             # Sample CSV data for testing
-├── docs/                    # Documentation
-├── main.py                  # Entry point
-├── requirements.txt
-├── pyproject.toml
-├── .env.example
-└── CLAUDE.md                # Claude Code project instructions
+Frontend (React + Recharts)  -->  FastAPI Backend  -->  Forecasting Engine
+     Vercel                        Railway              SARIMA / ETS / Prophet
+                                      |
+                                  LangChain Agent
+                                      |
+                                  GPT-4o (OpenAI)
 ```
-
-## Prerequisites
-
-- Python 3.10+
-- Node.js 18+ (for Claude Code)
-- An Anthropic API key
 
 ## Quick Start
 
-### 1. Clone and install
+### Prerequisites
+
+- Python 3.12+
+- Node.js 18+
+- OpenAI API key
+
+### Backend
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Lakshya2905/demand-planner.git
 cd demand-planner
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate
 pip install -r requirements.txt
+
+# Set your API key
+echo "OPENAI_API_KEY=your_key_here" > .env
+
+# Start the server
+uvicorn api:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### 2. Configure environment
+### Frontend
 
 ```bash
-cp .env.example .env
-# Edit .env and add your ANTHROPIC_API_KEY
+npx create-react-app demand-ui
+cd demand-ui
+npm install recharts
+# Copy the dashboard component to src/App.js
+npm start
 ```
 
-### 3. Run with sample data
+## API Endpoints
 
-```bash
-python main.py --demo
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/skus` | List all SKUs |
+| GET | `/api/history/{sku_id}` | Historical demand + stats |
+| POST | `/api/forecast` | Run forecast (ARIMA/ETS/Prophet/ensemble) |
+| POST | `/api/anomalies` | Detect demand anomalies |
+| GET | `/api/compare?skus=A,B` | Compare multiple SKUs |
+| POST | `/api/edit` | Edit a data point |
+| POST | `/api/upload` | Upload new CSV dataset |
+| POST | `/api/chat` | AI assistant (GPT-4o) |
+| POST | `/api/forecast-chain` | LangChain chain: forecast + backtest + insights |
+| POST | `/api/anomalies-chain` | LangChain chain: anomalies + explanation |
+| POST | `/api/knowledge` | RAG knowledge base query |
+| GET | `/api/usage` | LLM usage stats |
+
+## Data Format
+
+CSV with columns: `date`, `sku_id`, `demand`, `warehouse` (optional)
+
+```csv
+date,sku_id,demand,warehouse
+2025-01-01,SKU-001,150.5,warehouse-east
+2025-01-02,SKU-001,142.3,warehouse-east
 ```
 
-### 4. Interactive mode (Natural Language Querying)
-
-```bash
-python main.py --interactive
-```
-
-### 5. Generate a forecast report
-
-```bash
-python main.py --report --sku "SKU-1234" --horizon 30
-```
-
-## Using with Claude Code
-
-This project includes a `CLAUDE.md` file that gives Claude Code full context about the codebase. You can use Claude Code to:
-
-```bash
-# Install Claude Code (requires Node.js 18+)
-npm install -g @anthropic-ai/claude-code
-
-# Navigate to project directory and start Claude Code
-cd demand-planner
-claude
-
-# Example prompts in Claude Code:
-# "Add a new forecasting model using XGBoost"
-# "Write tests for the anomaly detection chain"
-# "Optimize the data preprocessing pipeline for large datasets"
-```
-
-## Configuration
-
-Edit `config/settings.yaml` to customize:
-
-- Forecasting horizons and model parameters
-- Anomaly detection thresholds
-- Report templates and scheduling
-- Data source connections
-
-## Sample Queries (Interactive Mode)
+## Project Structure
 
 ```
-> What is the forecasted demand for SKU-1234 over the next 4 weeks?
-> Show me anomalies detected in warehouse-east inventory last month
-> Compare actual vs predicted demand for Q3
-> Generate a weekly demand summary report
-> Which SKUs are trending upward this quarter?
+demand-planner/
+  api.py                         # FastAPI backend (15 endpoints)
+  main.py                        # CLI entry point
+  config/settings.yaml           # All model parameters
+  src/
+    agents/demand_agent.py       # LangChain agent with 7 tools
+    chains/
+      forecast_chain.py          # 5-step RunnableSequence
+      anomaly_chain.py           # Detection + LLM explanation
+      rag_chain.py               # RAG knowledge base (10 docs)
+      memory.py                  # Auto-summarizing chat memory
+      callbacks.py               # Token/cost/latency tracking
+      output_parsers.py          # Pydantic structured outputs
+    models/
+      arima_model.py             # SARIMA(1,1,1)(1,1,1,7)
+      exponential_smoothing.py   # Holt-Winters
+      prophet_model.py           # Meta Prophet
+    tools/                       # LangChain tools
+    data/                        # Preprocessor + validators
+  sample_data/                   # Sample data generator
 ```
+
+## LangChain Components
+
+| Component | Purpose |
+|-----------|---------|
+| Demand Agent | Tool-calling agent (ReAct pattern) with 7 tools |
+| Forecast Chain | RunnableSequence: validate, preprocess, fit, backtest, LLM insights |
+| Anomaly Chain | Statistical detection + GPT-4o business explanation |
+| RAG Knowledge | 10-document vector store for supply chain concepts |
+| Memory | Conversation history with automatic summarization |
+| Callbacks | Token tracking, cost estimation, latency logging |
+| Output Parsers | Pydantic models for structured LLM responses |
+
+## Tech Stack
+
+Python 3.12, FastAPI, React 18, Recharts, LangChain, OpenAI GPT-4o, Statsmodels, Prophet, Pandas, NumPy
+
+Hosted on Railway (backend) and Vercel (frontend).
 
 ## License
 
